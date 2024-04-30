@@ -1,0 +1,8 @@
+{
+  "dashboards" : {
+	"pkts_bytes_ip_split" : {
+		"shortName" : "pkts_bytes_ip_split",
+		"name": "Pkts/Bytes per IPsrc/dst split"
+	}
+  }
+}

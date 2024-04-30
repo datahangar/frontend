@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="assets/img/favicons/favicon.ico">
+
+    <title>Network analytics meta-dashboard</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="css/frontend.css" rel="stylesheet">
+  </head>
+
+  <body>
+    <nav class="navbar navbar-expand-md navbar-dark bg-dark navbar-sticky-top p-0 mr-0" id="main-navbar">
+      <a class="navbar-brand px-4" href="#">datahangar</a>
+      <div class="navbar-collapse">
+	      <ul class="navbar-nav col-sm-6 col-md-10 flex-row">
+		<li class="nav-item px-2">
+                  <a class="nav-link active" href="#" id="home">
+                    <span data-feather="home"></span> Home 
+                  </a>
+		</li>
+		<li class="nav-item px-2">
+                  <a class="nav-link" href="#" id="datacubes">
+                    <span data-feather="layers"></span> Data Cubes<span id="datacube-label"></span> 
+                  </a>
+		</li>
+		<li class="nav-item dropdown px-2">
+		  <a class="nav-link dropdown-toggle" href="#" id="dashboards" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+			<span data-feather="monitor"></span> <span id="dashboards-label">Dashboards</span> 
+		  </a>
+		  <div class="dropdown-menu" aria-labelledby="dashboards" id="nav-dashboards">
+                      <h6 class="dropdown-header">Preset</h6>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item dashboard" href="#" id="manage-dashboards"><span data-feather="tool"></span>&nbsp;&nbsp;Manage dashboards</a>
+		  </div>
+		</li>
+		<li class="nav-item px-2">
+                  <a class="nav-link disabled" href="#" id="create-dashboard">
+                    <span data-feather="plus"></span> Create dashboard 
+                  </a>
+		</li>
+		<li class="nav-item px-2">
+                  <a class="nav-link" href="#" id="reports">
+                    <span data-feather="bar-chart-2"></span> Reports
+                  </a>
+		</li>
+		<li class="nav-item px-2">
+                  <a class="nav-link" href="#" id="alarms">
+                    <span data-feather="alert-triangle"></span> Alarms
+                  </a>
+		</li>
+		<li class="nav-item px-2">
+                  <a class="nav-link" href="#" id="help">
+                    <span data-feather="help-circle"></span> Help 
+                  </a>
+		</li>
+	      </ul>
+      </div>
+      <ul class="navbar-nav mr-3">
+	<li class="nav-item">
+	  <a class="nav-link" href="#" aria-haspopup="true" aria-expanded="false">
+		<span data-feather="settings"></span>
+	  </a>
+        </li>
+	<li class="nav-item dropdown">
+	  <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+		<span data-feather="user"></span> Root
+	  </a>
+	  <div class="dropdown-menu dropdown-menu-right" aria-labelledby="User">
+	      <a class="dropdown-item" href="#"><span data-feather="edit-2"></span>&nbsp;&nbsp;Edit</a>
+	      <div class="dropdown-divider"></div>
+	      <a class="dropdown-item" href="github.com"><span data-feather="log-out"></span>&nbsp;&nbsp;Signout</a>
+	  </div>
+	</li>
+      </ul>
+    </nav>
+    <div id="notifications" class="position-absolute top-0 end-0">
+    </div>
+
+    <div class="container-fluid p-0 mr-0">
+        <main role="main" class="w-100 h-100">
+          <iframe class="h-100 w-100 border-0" src="home.html" id="main-iframe"/></iframe>
+        </main>
+    </div>
+<div class="modal fade" id="create-dashboard-modal" tabindex="-1" role="dialog" aria-labelledby="createAdashboard" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Create a Dashboard</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="name-group">
+            <label for="create-dashboard-name" class="col-form-label">Name:</label>
+            <input type="text" class="form-control" id="create-dashboard-name">
+          </div>
+          <div class="form-group">
+            <label for="create-dashboard-description" class="col-form-label">Description:</label>
+            <textarea class="form-control" id="create-dashboard-description"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="create-dashboard-url" class="col-form-label">URL:</label>
+            <textarea class="form-control" id="create-dashboard-url" disabled></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="create-dashboard-submit">Create</button>
+      </div>
+    </div>
+  </div>
+</div>
+    <footer class="footer w-100">
+      Copyright &#169; datahangar.io 2024. All rights reserved.
+    </footer>
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+
+    <!-- Icons -->
+    <script src="https://unpkg.com/feather-icons/dist/feather.min.js"></script>
+    <script>
+      feather.replace()
+    </script>
+
+    <!-- Graphs -->
+    <script src="js/alerts.js"></script>
+    <script src="js/navigation.js"></script>
+  </body>
+</html>
