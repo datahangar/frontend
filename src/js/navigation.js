@@ -1,9 +1,9 @@
 //Iframe
 function main_iframe_set_url(url){
-   $("#main-iframe").attr("src", url);
+  $("#main-iframe").attr("src", url);
 }
 function main_iframe_get_url(){
-   return $("#main-iframe").contents().get(0).location.hash;
+  return $("#main-iframe").contents().get(0).location.hash;
 }
 
 function main_iframe_has_turnilo(){
@@ -11,192 +11,276 @@ function main_iframe_has_turnilo(){
 }
 
 function get_datacube_from_url(url){
-  return url.match("#([^\/]*)\/.*")[1];
+  try{
+    return url.match("#([^\/]*)\/.*")[1];
+  }catch(error){
+    return null;
+  }
 }
 
-//Nav
-$( "#main-navbar li.nav-item a.nav-link" ).on("click", function(){
-     if($(this).hasClass("disabled") || $(this).hasClass("dropdown-toggle")) return;
-     $("#main-navbar li.nav-item a.active").removeClass("active");
-     //$("#main-navbar li.nav-item a.active2").removeClass("active2");
-     curr = $(this).attr("id");
-     switch(curr) {
-       case 'home':
-       case 'help':
-       case 'alarms':
-       case 'reports':
-         $("#main-iframe").attr("src", $(this).attr("id")+".html");
-         break;
-       case 'datacubes':
-         $("#create-dashboard").removeClass("disabled");
-         main_iframe_set_url("turnilo/");
-         break;
-       case 'create-dashboard':
-         url = main_iframe_get_url();
-         if(url == ""){
-           $("#datacubes").addClass("active"); //revert
-           return;
-         }
-         $("#create-dashboard-url").val(url);
-         $("#create-dashboard-modal").modal("show");
-         return;
-       default:
-         break;
-     }
-     if($(this).hasClass("active"))
-       $(this).removeClass("active");
-     else
-       $(this).addClass("active");
+//Dashboard REST API recovery
+datacubes = {};
+dashboards = {};
+dashboard_urls = {};
+curr_datacube = null;
+
+function rest_query_datacubes(){
+  $.getJSON( "turnilo/sources/", function(custom_data){
+    datacubes_ = {}
+    $.each(custom_data["dataCubes"], function(idx, elem) {
+      datacubes_[elem["name"]] = elem;
+    });
+    datacubes = datacubes_;
+  });
+}
+
+function rest_query_dashboards(){
+  $.getJSON( "rest/turnilo/dashboards/", function(custom_data){
+    dashboards_ = {};
+    $.each(custom_data, function(idx, elem) {
+      dashboards_[elem["shortName"]] = elem;
+    });
+    dashboards = dashboards_;
+  });
+}
+
+//Navigation
+$("#main-navbar li.nav-item a.nav-link").on("click", function(){
+    if($(this).hasClass("disabled") || $(this).hasClass("dropdown-toggle"))
+      return;
+
+    $("#main-navbar li.nav-item a.active").removeClass("active");
+
+    switch($(this).attr("id")) {
+      case 'datacubes':
+        $("#create-dashboard").removeClass("disabled");
+        main_iframe_set_url("turnilo/");
+        break;
+      case 'create-dashboard':
+        url = main_iframe_get_url();
+        if(url == ""){
+          $("#datacubes").addClass("active"); //revert
+          return;
+        }
+        $("#modal-dashboard-url").val(url);
+        $("#modal-dashboard-id").val("");
+        $("#modal-dashboard-name").val("");
+        $("#modal-dashboard-description").val("");
+        $("#modal-dashboard-create").show();
+        $("#modal-dashboard-close").show();
+        $("#modal-dashboard-update").hide();
+        $("#modal-dashboard-delete").hide();
+        $("#modal-dashboard").modal("show");
+        return;
+      default:
+        $("#main-iframe").attr("src", $(this).attr("id")+".html");
+        break;
+    }
+
+    $(this).toggleClass("active")
 });
 
-//Dashboards
-function dashboards_add_link(short_name, name, preset){
-    dashboards_menu_divider = $("#nav-dashboards h6.dropdown-header");
-    if(!preset)
-      $('<a class="dropdown-item dashboard" href="#" id="'+short_name+'">'+name+'</a>').insertBefore(dashboards_menu_divider);
-    else
-      $('<a class="dropdown-item dashboard" href="#" id="'+short_name+'">'+name+'</a>').insertAfter(dashboards_menu_divider);
-}
+//Create or update dashboard
+function create_update_dashboard(create){
+    //Validate
+    id = $("#modal-dashboard-id").val();
+    name = $("#modal-dashboard-name").val();
+    description = $("#modal-dashboard-description").val();
+    url_val = $("#modal-dashboard-url").val();
 
-function dashboards_load_dashboard(hash, shortName, name){
-  main_iframe_set_url("turnilo/"+hash);
-  $("#main-navbar li.nav-item a.active").removeClass("active");
-  $("#dashboards").addClass("active");
+    if(!name || name == "" || !url_val || url_val == ""){
+      notify_error("Unable to create dashboard. Invalid name or URL!");
+      return;
+    }
 
-  //Store for watcher (last clicked dashboard)
-  curr = {
-    "hash" : hash,
-    "shortName": shortName,
-    "name": name
-  };
-  $("body").data("curr_dashboard", curr);
-}
+    //Create a dashboard
+    dataCube = get_datacube_from_url(url_val);
+    dashboard = {
+      "dataCube":    dataCube,
+      "shortName":   name,
+      "description": description,
+      "name":        name,
+      "hash":        url_val
+    }
 
-function dashboards_reprogram_handlers(){
-    $("#main-navbar li.nav-item a.dashboard" ).on("click", function(){
-      dashboard_link = $(this)
-      //Check if it's a custom Dashboard
-      dashboards_dict=$("#nav-dashboards").data("dashboards");
-      dashboard = dashboards_dict[$(this).attr("id")]
-      shortName = dashboard["shortName"];
-      name = dashboard["name"]
-      if("hash" in dashboard){
-        dashboards_load_dashboard(dashboard["hash"], shortName, name);
-      }else{
-       //Preset (View Definition)
-        $.getJSON("dashboard_defs/"+dashboard["shortName"]+".json", function( data ) {
-         $.post( "turnilo/mkurl", data, function(data) {
-           dashboards_load_dashboard(data["hash"], shortName, name);
-         });
-        });
+    url = '/rest/turnilo/dashboards/';
+    if(create){
+      type = 'POST';
+      op_str = "Create";
+    }else{
+      dashboard['id'] = id;
+      url += id;
+      type = 'PUT';
+      op_str = "Update";
+    }
+
+    //Add to the backend
+    $.ajax({
+      url: url,
+      type: type,
+      crossDomain: true,
+      headers: {'Content-Type': 'application/json'},
+      data: JSON.stringify(dashboard),
+      success: function(dashboard, status) {
+        console.log("Dashboard successfully "+op_str.toLowerCase()+"d in the backend...");
+        console.log(JSON.stringify((dashboard)));
+        $("#modal-dashboard-id").val(dashboard['id']);
+        $("#modal-dashboard").modal("hide");
+        notify_success(op_str+"d dashboard '"+name+"'");
+
+        timer_query_rest(true);
+        timer_update_views(true);
+      },
+      error: function(xhr, status, error) {
+        notify_error("Failed: "+op_str+" dashboard '"+name+"'");
       }
     });
+}
+$("#modal-dashboard-create").on("click", function(){
+  create_update_dashboard(true);
+});
+$("#modal-dashboard-update").on("click", function(){
+  create_update_dashboard(false);
+});
+$("#modal-dashboard-delete").on("click", function(){
+    id = $("#modal-dashboard-id").val();
+    name = $("#modal-dashboard-name").val();
+    url = '/rest/turnilo/dashboards/'+id;
 
-    $("#manage-dashboards" ).on("click", function(){
-      main_iframe_set_url("dashboards.html");
-    });
+    //Be kind
+    $("#modal-confirm-dashboard-name").html(name);
+    $("#modal-confirm button.confirm_delete").attr('data-url', url);
+    $("#modal-confirm button.confirm_delete").attr('data-name', name);
+    $("#modal-confirm").modal("show");
+});
+$("#modal-confirm button.confirm_delete").on("click", function(){
+  url = $(this).attr('data-url');
+  name = $(this).attr('data-name');
+  $.ajax({
+    url: url,
+    type: 'DELETE',
+    crossDomain: true,
+    headers: {'Content-Type': 'application/json'},
+    success: function(status) {
+      console.log("Dashboard successfully deleted in the backend...");
+      $("#modal-dashboard").modal("hide");
+      notify_success("Deleted dashboard '"+name+"'");
+
+      timer_query_rest(true);
+      timer_update_views(true);
+    },
+    error: function(xhr, status, error) {
+      console.log("ERROR deleting dashboard '"+name+"':"+error);
+      notify_error("Failed: deleting dashboard '"+name+"'");
+    }
+  });
+});
+
+//Update labels
+function set_current_datacube(){
+  curr_datacube = get_datacube_from_url(main_iframe_get_url());
+  label = "";
+  try{
+    label = "("+datacubes[curr_datacube]["title"]+")";
+  }catch(error){};
+
+  if($("#datacube-label").text() == label)
+    return;
+
+  $("#datacube-label").text(label);
 }
 
-function dashboards_program_create_handler(){
-  $("#create-dashboard-submit").on("click", function(){
-     //Validate
-     name = $("#create-dashboard-name").val();
-     description = $("#create-dashboard-description").val();
-     url_val = $("#create-dashboard-url").val();
-     if(!name || name == "" || !url_val || url_val == ""){
-        notify_error("Unable to create dashboard. Invalid name or URL!");
-        return;
-     }
+function update_dashboard_list(){
+  dashboard_list_preset = "";
+  dashboard_list_custom = "";
+  dashboard_urls_ = {}
 
-     //Create a dashboard
-     shortName = rand_str();
-     dashboard = {
-        "dataCube":  get_datacube_from_url(url_val),
-        "shortName": shortName,
-        "name":      name,
-        "hash":      url_val
-     }
-     //Add to the backend
-     $.ajax({
-       url: '/rest/turnilo/dashboards/',
-       type: 'POST',
-       headers: {'Content-Type': 'application/json'},
-       data: JSON.stringify(dashboard),
-       success: function(dashboard, status) {
-         console.log("Dashboard successfully created in the backend...");
-         console.log(JSON.stringify((dashboard)));
-         shortName = dashboard["shortName"];
-         dashboards_dict=$("#nav-dashboards").data("dashboards");
-         dashboards_dict[shortName] = dashboard;
-         dashboards_add_link(shortName, name, false);
-         dashboards_reprogram_handlers();
-         $("#create-dashboard-modal").modal("hide");
-         dashboards_load_dashboard(url_val, shortName, name);
-         notify_success("Created dashboard '"+name+"'");
-       }
-    });
+  for(let i in dashboards){
+    d = dashboards[i];
+    if(d["dataCube"] != curr_datacube)
+      continue;
+    elem = '<div class="d-flex"><span class="w-100"><a class="dropdown-item dashboard" datacube="'+d["dataCube"]+'" href="#" dash-id="'+d["shortName"]+'">'+d["shortName"]+'</a></span>';
+    if(d["preset"])
+      dashboard_list_preset += elem+"</div>";
+    else
+      dashboard_list_custom += elem+'<span class="pr-3"><a class="dashboard-edit pl-1 cursor-pointer" dash-id="'+d["shortName"]+'"><span data-feather="edit-2"></span></a></span></div>';
+    dashboard_urls_[d["hash"]] = d;
+  }
+
+  //Do not change DOM unless strictly necessary
+  changes = false;
+  dashboard_urls = dashboard_urls_;
+  if($("#dashboard-list-custom").attr('content') != dashboard_list_custom){
+    $("#dashboard-list-custom").attr('content', dashboard_list_custom);
+    $("#dashboard-list-custom").html(dashboard_list_custom);
+    changes = true;
+  }
+  if($("#dashboard-list-preset").html() != dashboard_list_preset){
+    $("#dashboard-list-preset").attr('content', dashboard_list_preset);
+    $("#dashboard-list-preset").html(dashboard_list_preset);
+    changes = true;
+  }
+
+  //Don't do any more (expensive) changes if not strictly necessary
+  if(!changes)
+    return;
+
+  if(dashboard_list_preset == "" && dashboard_list_custom == "")
+    $("#dashboards").addClass("disabled");
+  else
+    $("#dashboards").removeClass("disabled");
+
+  //Reprogram click handler
+  feather.replace({ container: $("#nav-dashboards").get(0) }); //replace edit icons
+
+  $("a.dashboard-edit").on("click", function(event){
+    d = dashboards[$(this).attr('dash-id')];
+    $("#modal-dashboard-id").val(d['id']);
+    $("#modal-dashboard-url").val(d['hash']);
+    $("#modal-dashboard-name").val(d['name']);
+    $("#modal-dashboard-description").val(d['description']);
+    $("#modal-dashboard-create").hide();
+    $("#modal-dashboard-close").hide();
+    $("#modal-dashboard-update").show();
+    $("#modal-dashboard-delete").show();
+    $("#modal-dashboard").modal("show");
+  });
+  $("#nav-dashboards a.dashboard" ).on("click", function(){
+    d = dashboards[$(this).attr('dash-id')];
+    main_iframe_set_url("turnilo/"+d["hash"]);
   });
 }
 
-function dashboards_program_watcher(){
-  setInterval(function(){
-    //DataCube
-    curr_hash = main_iframe_get_url();
-    if(curr_hash && curr_hash != ""){
-      $.getJSON( "turnilo/sources/", function( custom_data ) {
-        datacube_name = get_datacube_from_url(curr_hash);
-        name = datacube_name;
-        $.each(custom_data["dataCubes"], function(idx, elem) {
-           if(elem["name"] == name){
-             name = elem["title"];
-             return false;
-           }
-        });
-        $("#datacube-label").text("("+name+")");
-      });
-    }else{
-        $("#datacube-label").text("");
-    }
-
-    //Dashboard
-    if($("body").data("curr_dashboard") == null) return;
-    last_hash = $("body").data("curr_dashboard")["hash"];
-    if(last_hash == curr_hash){
-      $("#dashboards-label").text("Dashboards("+$("body").data("curr_dashboard")["name"]+")");
-    }else{
-      $("#dashboards-label").text("Dashboards");
-     $("#dashboards").removeClass("active");
-     $("#datacubes").addClass("active");
-    }
-  }, 500);
+function set_current_dashboard(){
+  url = main_iframe_get_url();
+  label = $("#dashboards-label")
+  label_text = "Dashboards";
+  if(url in dashboard_urls){
+    d = dashboard_urls[url];
+    label_text = "Dashboards("+d["name"]+")";
+  }
+  if(label.text() != label_text)
+    label.text(label_text);
 }
 
-$( document ).ready(function() {
-  //Get list of preset dashboards
-  $.getJSON( "dashboard_defs/index.json", function( data ) {
-    dashboards = data["dashboards"];
-    $.each(dashboards, function( key, val ) {
-	dashboards_add_link(key, val["name"], true);
-    });
+function timer_query_rest(){
+  rest_query_datacubes();
+  rest_query_dashboards();
+}
 
-    $("#nav-dashboards").data("dashboards", dashboards);
-    dashboards_reprogram_handlers();
-    feather.replace();
+function timer_update_views(){
+  set_current_datacube();
+  update_dashboard_list();
+  set_current_dashboard();
+}
 
-    //Get the list of custom dashboards
-    $.getJSON( "rest/turnilo/dashboards/", function( custom_data ) {
-      $.each(custom_data, function(idx, elem) {
-        console.log("Adding custom dashboard '"+elem["name"]+"':\n"+JSON.stringify(elem));
-        dashboards[elem["shortName"]] = elem;
-        dashboards_add_link(elem["shortName"], elem["name"], false);
-      });
-      $("#nav-dashboards").data("dashboards", dashboards);
-      dashboards_reprogram_handlers();
-      feather.replace();
-    });
+//Main routines
+$( document ).ready(function(){
+  //Query REST periodically
+  setInterval(timer_query_rest, 5000);
+  timer_query_rest();
 
-  dashboards_program_create_handler();
-  dashboards_program_watcher();
-  });
-  notify_info("Welcome!");
+  //Update labels
+  setInterval(timer_update_views, 250);
+  timer_update_views();
 });

@@ -36,9 +36,10 @@
 			<span data-feather="monitor"></span> <span id="dashboards-label">Dashboards</span> 
 		  </a>
 		  <div class="dropdown-menu" aria-labelledby="dashboards" id="nav-dashboards">
-                      <h6 class="dropdown-header">Preset</h6>
+		      <div id="dashboard-list-custom"></div>
                       <div class="dropdown-divider"></div>
-                      <a class="dropdown-item dashboard" href="#" id="manage-dashboards"><span data-feather="tool"></span>&nbsp;&nbsp;Manage dashboards</a>
+                      <h6 class="dropdown-header">Preset</h6>
+		      <div id="dashboard-list-preset"></div>
 		  </div>
 		</li>
 		<li class="nav-item px-2">
@@ -71,12 +72,12 @@
         </li>
 	<li class="nav-item dropdown">
 	  <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-		<span data-feather="user"></span> Root
+		<span data-feather="user"></span> <span id="username">Root</span>
 	  </a>
 	  <div class="dropdown-menu dropdown-menu-right" aria-labelledby="User">
 	      <a class="dropdown-item" href="#"><span data-feather="edit-2"></span>&nbsp;&nbsp;Edit</a>
 	      <div class="dropdown-divider"></div>
-	      <a class="dropdown-item" href="github.com"><span data-feather="log-out"></span>&nbsp;&nbsp;Signout</a>
+	      <a class="dropdown-item" href="http://www.datahangar.io"><span data-feather="log-out"></span>&nbsp;&nbsp;Signout</a>
 	  </div>
 	</li>
       </ul>
@@ -89,38 +90,68 @@
           <iframe class="h-100 w-100 border-0" src="home.html" id="main-iframe"/></iframe>
         </main>
     </div>
-<div class="modal fade" id="create-dashboard-modal" tabindex="-1" role="dialog" aria-labelledby="createAdashboard" aria-hidden="true">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Create a Dashboard</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <form>
-          <div class="name-group">
-            <label for="create-dashboard-name" class="col-form-label">Name:</label>
-            <input type="text" class="form-control" id="create-dashboard-name">
+
+    <div class="modal fade" id="modal-dashboard" tabindex="-1" role="dialog" aria-labelledby="createadashboard" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="examplemodallabel">Create a dashboard</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="close">
+              <span aria-hidden="true">&times;</span>
+            </button>
           </div>
-          <div class="form-group">
-            <label for="create-dashboard-description" class="col-form-label">Description:</label>
-            <textarea class="form-control" id="create-dashboard-description"></textarea>
+          <div class="modal-body">
+            <form>
+              <div class="name-group">
+                <label for="modal-dashboard-id" class="col-form-label">Id:</label>
+                <input type="text" class="form-control" id="modal-dashboard-id" disabled>
+              </div>
+              <div class="name-group">
+                <label for="modal-dashboard-name" class="col-form-label">Name:</label>
+                <input type="text" class="form-control" id="modal-dashboard-name">
+              </div>
+              <div class="form-group">
+                <label for="modal-dashboard-description" class="col-form-label">Description:</label>
+                <textarea class="form-control" id="modal-dashboard-description"></textarea>
+              </div>
+              <div class="form-group">
+                <label for="modal-dashboard-url" class="col-form-label">URL:</label>
+                <textarea class="form-control" id="modal-dashboard-url" disabled></textarea>
+              </div>
+            </form>
           </div>
-          <div class="form-group">
-            <label for="create-dashboard-url" class="col-form-label">URL:</label>
-            <textarea class="form-control" id="create-dashboard-url" disabled></textarea>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal" id="modal-dashboard-close">Close</button>
+            <button type="button" class="btn btn-danger" data-dismiss="modal" id="modal-dashboard-delete">Delete</button>
+            <button type="button" class="btn btn-primary" id="modal-dashboard-create">Create</button>
+            <button type="button" class="btn btn-primary" id="modal-dashboard-update">Update</button>
           </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" id="create-dashboard-submit">Create</button>
+        </div>
       </div>
     </div>
-  </div>
-</div>
+
+    <div class="modal fade" id="modal-confirm" tabindex="-1" role="dialog" aria-labelledby="createadashboard" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="examplemodallabel">Delete a dashboard</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+              <p>Are you sure you want to delete dashboard '<span id="modal-confirm-dashboard-name"></span>'?</p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-default" data-dismiss="modal">No</button>
+              <button type="button" class="btn btn-danger confirm_delete" data-dismiss="modal">Yes</button>
+            </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
     <footer class="footer w-100">
       Copyright &#169; datahangar.io 2024. All rights reserved.
     </footer>

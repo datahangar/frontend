@@ -3,15 +3,18 @@ function rand_str(){
 }
 
 function _notify(content, type){
-  id="div_" + rand_str();
+  const id="div_" + rand_str();
   $("#notifications").append(
       '<div class="alert alert-'+type+'" style="display:none" role="alert" id="'+id+'">'+content+'</div>'
   )
-  id="#"+id;
-  $(id).slideDown(400);
-  setTimeout(function(id_) {
-    $(id_).slideUp(600, function(id_){ $(id_).remove()});
-  }, 2500, id);
+  const selector = "#" + id;
+  $(selector).slideDown(400);
+
+  setTimeout(function() {
+    $(selector).slideUp(600, function(id_){
+      $(this).remove();
+    });
+  }, 2500);
 }
 
 function notify_success(content){
